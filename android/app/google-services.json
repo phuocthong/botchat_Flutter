@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "459897220631",
+    "project_id": "potter-gemini",
+    "storage_bucket": "potter-gemini.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:459897220631:android:5f56c4cd61f0b633c0b652",
+        "android_client_info": {
+          "package_name": "com.example.gemini_gpt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcUwkJ4CYww6qTzUyUlf6wZlmQMyArURc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

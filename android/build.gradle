@@ -1,0 +1,31 @@
+buildscript {
+    ext.kotlin_version = '1.8.22' // Nâng cấp phiên bản Kotlin
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.1.1" // Giữ nguyên
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version" // Sử dụng Kotlin mới
+        classpath 'com.google.gms:google-services:4.4.2' // Cập nhật phiên bản mới hơn
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = '../build'
+
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
