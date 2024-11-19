@@ -1,16 +1,23 @@
-# gemini_gpt
+# Potter-GPT Flutter Application
 
-A new Flutter project.
+**Potter-GPT** là một ứng dụng chatbot sử dụng Flutter, tích hợp Firebase để quản lý người dùng và cung cấp tính năng gửi, nhận tin nhắn.
 
-## Getting Started
+## 📱 **Tính năng**
+- Đăng nhập/Đăng xuất bằng Firebase Authentication.
+- Gửi và nhận tin nhắn với chatbot.
+- Chuyển đổi giữa chế độ **Light** và **Dark**.
+- Giao diện thân thiện và dễ sử dụng.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠 **Cài đặt và sử dụng**
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 1️⃣ Yêu cầu hệ thống:
+- Flutter SDK >= 3.0
+- Dart >= 2.18
+- Firebase Project
+- VS Code hoặc Android Studio
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 2️⃣ Cài đặt:
+1. Clone repository này:
+   git clone https://github.com/phuocthong/botchat_Flutter
