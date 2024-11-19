@@ -7,6 +7,8 @@ import 'package:gemini_gpt/themeNotifier.dart';
 import 'package:gemini_gpt/themes.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase
 import 'package:gemini_gpt/LoginScreen.dart';
+import 'package:gemini_gpt/onboarding.dart'; // Import màn hình Onboarding
+import 'package:shared_preferences/shared_preferences.dart'; // Để lưu trạng thái Onboarding
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Khởi tạo Flutter Binding
@@ -21,6 +23,16 @@ void main() async {
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
+  Future<bool> _isFirstTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isFirstTime') ?? true;
+  }
+
+  void _setFirstTimeFalse() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFirstTime', false);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
@@ -32,26 +44,38 @@ class MyApp extends ConsumerWidget {
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       routes: {
-        '/login': (context) => const LoginScreen(), // Khai báo route /login
-        '/home': (context) => const MyHomePage(), // Khai báo route /home
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const MyHomePage(),
       },
-      // Dùng StreamBuilder để theo dõi trạng thái đăng nhập
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
+      home: FutureBuilder<bool>(
+        future: _isFirstTime(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            // Hiển thị màn hình chờ nếu Firebase đang xử lý
             return const Scaffold(
               body: Center(
                 child: CircularProgressIndicator(),
               ),
             );
-          } else if (snapshot.hasData) {
-            // Nếu người dùng đã đăng nhập, chuyển đến MyHomePage
-            return const MyHomePage(); // Sử dụng widget MyHomePage đã có
+          } else if (snapshot.hasData && snapshot.data == true) {
+            _setFirstTimeFalse(); // Cập nhật trạng thái không phải lần đầu
+            return const Onboarding(); // Hiển thị màn hình Onboarding
           } else {
-            // Nếu chưa đăng nhập, chuyển đến LoginScreen
-            return const LoginScreen();
+            return StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                } else if (snapshot.hasData) {
+                  return const MyHomePage();
+                } else {
+                  return const LoginScreen();
+                }
+              },
+            );
           }
         },
       ),

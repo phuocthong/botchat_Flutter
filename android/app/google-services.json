@@ -12,7 +12,12 @@
           "package_name": "com.example.gemini_gpt"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "459897220631-krad8024ec062d8jqcl45hpmp37oknok.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAcUwkJ4CYww6qTzUyUlf6wZlmQMyArURc"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "459897220631-krad8024ec062d8jqcl45hpmp37oknok.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
