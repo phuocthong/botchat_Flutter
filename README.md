@@ -29,7 +29,7 @@ flutter pub get
 - Tạo dự án trên Firebase.
 - Thêm tệp google-services.json (Android) và GoogleService-Info.plist (iOS) vào thư mục tương ứng.
 - Đảm bảo các tệp được khai báo trong pubspec.yaml.
-- 
+
 4. Cấu hình API (nếu có sử dụng):
 Tạo file .env tại thư mục gốc:
 API_KEY=your-api-key
