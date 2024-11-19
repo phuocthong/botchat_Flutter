@@ -21,3 +21,18 @@
 ### 2️⃣ Cài đặt:
 1. Clone repository này:
    git clone https://github.com/phuocthong/botchat_Flutter
+   
+2. Cài đặt các gói phụ thuộc:
+flutter pub get
+
+3. Cấu hình Firebase:
+- Tạo dự án trên Firebase.
+- Thêm tệp google-services.json (Android) và GoogleService-Info.plist (iOS) vào thư mục tương ứng.
+- Đảm bảo các tệp được khai báo trong pubspec.yaml.
+- 
+4. Cấu hình API (nếu có sử dụng):
+Tạo file .env tại thư mục gốc:
+API_KEY=your-api-key
+
+5. Chạy ứng dụng:
+flutter run
