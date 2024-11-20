@@ -5,15 +5,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gemini_gpt/myHomePage.dart';
 import 'package:gemini_gpt/themeNotifier.dart';
 import 'package:gemini_gpt/themes.dart';
-import 'package:firebase_core/firebase_core.dart'; // Firebase
+import 'package:firebase_core/firebase_core.dart';
 import 'package:gemini_gpt/LoginScreen.dart';
-import 'package:gemini_gpt/onboarding.dart'; // Import màn hình Onboarding
+import 'package:gemini_gpt/onboarding.dart'; // Onboarding
 import 'package:shared_preferences/shared_preferences.dart'; // Để lưu trạng thái Onboarding
+import 'package:flutter/foundation.dart'; // Để kiểm tra môi trường Web
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Khởi tạo Flutter Binding
-  await Firebase.initializeApp(); // Khởi tạo Firebase
-  await dotenv.load(fileName: ".env"); // Load tệp môi trường
+
+  // Khởi tạo Firebase tùy theo môi trường
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+        apiKey: "AIzaSyBHu_DTyVYqRZt62nVWmUXO97eJhK9Zs4M",
+        authDomain: "potter-gemini.firebaseapp.com",
+        projectId: "potter-gemini",
+        storageBucket: "potter-gemini.firebasestorage.app",
+        messagingSenderId: "459897220631",
+        appId: "1:459897220631:web:2c682ec4db8ccdb3c0b652",
+        measurementId: "G-EGJNP85Q6L"
+      ),
+    );
+  } else {
+    await Firebase.initializeApp(); // Android/iOS sử dụng file cấu hình
+  }
+
+  // Load tệp môi trường
+  await dotenv.load(fileName: ".env");
 
   runApp(
     const ProviderScope(child: MyApp()),
@@ -57,8 +76,10 @@ class MyApp extends ConsumerWidget {
               ),
             );
           } else if (snapshot.hasData && snapshot.data == true) {
-            _setFirstTimeFalse(); // Cập nhật trạng thái không phải lần đầu
-            return const Onboarding(); // Hiển thị màn hình Onboarding
+            return Onboarding(onDone: () {
+              _setFirstTimeFalse();
+              _navigateBasedOnAuthState(context);
+            });
           } else {
             return StreamBuilder<User?>(
               stream: FirebaseAuth.instance.authStateChanges(),
@@ -80,5 +101,15 @@ class MyApp extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  void _navigateBasedOnAuthState(BuildContext context) {
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    });
   }
 }

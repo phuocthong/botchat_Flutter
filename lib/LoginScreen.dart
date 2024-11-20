@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';  // Import google_sign_in package
+import 'package:google_sign_in/google_sign_in.dart'; // Import google_sign_in package
+import 'package:flutter/foundation.dart'; // Để kiểm tra nền tảng
 import 'package:gemini_gpt/RegisterScreen.dart';
 import 'package:gemini_gpt/ForgetPasswordScreen.dart';
 
@@ -18,7 +19,25 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
 
   // Khởi tạo GoogleSignIn
-  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final GoogleSignIn googleSignIn = GoogleSignIn(
+    clientId:
+        '459897220631-krad8024ec062d8jqcl45hpmp37oknok.apps.googleusercontent.com', // Thay bằng clientId từ Google Console
+  );
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Khởi tạo Facebook SDK nếu đang chạy trên Web
+    if (kIsWeb) {
+      FacebookAuth.instance.webInitialize(
+        appId: "YOUR_FACEBOOK_APP_ID", // Thay bằng App ID từ Facebook Developer Console
+        cookie: true,
+        xfbml: true,
+        version: "v17.0", // Phiên bản Graph API
+      );
+    }
+  }
 
   void loginUser(BuildContext context) async {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
@@ -73,30 +92,25 @@ class _LoginScreenState extends State<LoginScreen> {
         isLoading = true;
       });
 
-      final LoginResult result = await FacebookAuth.instance.login();
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['email', 'public_profile'],
+      );
+
       if (result.status == LoginStatus.success) {
-        final accessToken = result.accessToken;
-        if (accessToken != null) {
-          final String? token = accessToken.token;
+        final accessToken = result.accessToken!.token;
 
-          // Cập nhật lại để sử dụng token đúng cách
-          final OAuthCredential facebookAuthCredential =
-              FacebookAuthProvider.credential(token!);
+        final OAuthCredential facebookAuthCredential =
+            FacebookAuthProvider.credential(accessToken!);
 
-          await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+        await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đăng nhập Facebook thành công!')),
-          );
-          Navigator.pushReplacementNamed(context, '/home');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Không nhận được access token từ Facebook')),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đăng nhập Facebook thành công!')),
+        );
+        Navigator.pushReplacementNamed(context, '/home');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng nhập Facebook thất bại.')),
+          SnackBar(content: Text('Đăng nhập thất bại: ${result.message}')),
         );
       }
     } catch (e) {
@@ -109,49 +123,47 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
+
   void loginWithGoogle(BuildContext context) async {
-  try {
-    setState(() {
-      isLoading = true;
-    });
+    try {
+      setState(() {
+        isLoading = true;
+      });
 
-    // Bước 1: Ngắt kết nối tài khoản cũ (nếu có)
-    await googleSignIn.signOut();
+      await googleSignIn.signOut(); // Ngắt kết nối tài khoản cũ
 
-    // Bước 2: Đăng nhập với Google và cho phép chọn tài khoản
-    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-    if (googleUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng nhập Google thất bại.')),
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Người dùng đã hủy đăng nhập.')),
+        );
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final OAuthCredential googleAuthCredential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
-      return;
+
+      await FirebaseAuth.instance.signInWithCredential(googleAuthCredential);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng nhập Google thành công!')),
+      );
+      Navigator.pushReplacementNamed(context, '/home');
+    } catch (e) {
+      debugPrint('Lỗi Google Sign-In: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi đăng nhập Google: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
-
-    // Bước 3: Lấy access token từ Google
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-    final OAuthCredential googleAuthCredential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    // Bước 4: Đăng nhập vào Firebase
-    await FirebaseAuth.instance.signInWithCredential(googleAuthCredential);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đăng nhập Google thành công!')),
-    );
-    Navigator.pushReplacementNamed(context, '/home');
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Lỗi: ${e.toString()}')),
-    );
-  } finally {
-    setState(() {
-      isLoading = false;
-    });
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +236,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ForgetPasswordScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const ForgetPasswordScreen()),
                   );
                 },
                 child: const Text("Quên mật khẩu?"),
@@ -233,7 +246,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const RegisterScreen()),
                   );
                 },
                 child: const Text("Chưa có tài khoản? Đăng ký ngay"),
@@ -244,6 +258,10 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}
+
+extension on FacebookAuth {
+  void webInitialize({required String appId, required bool cookie, required bool xfbml, required String version}) {}
 }
 
 extension on AccessToken {
