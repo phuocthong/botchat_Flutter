@@ -8,13 +8,14 @@ import 'package:gemini_gpt/themes.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:gemini_gpt/LoginScreen.dart';
 import 'package:gemini_gpt/onboarding.dart'; // Onboarding
-import 'package:shared_preferences/shared_preferences.dart'; // Để lưu trạng thái Onboarding
-import 'package:flutter/foundation.dart'; // Để kiểm tra môi trường Web
+import 'package:shared_preferences/shared_preferences.dart'; // Lưu trạng thái Onboarding
+import 'package:flutter/foundation.dart'; // Kiểm tra môi trường Web
+import 'package:gemini_gpt/settings_page.dart'; // Đảm bảo đúng đường dẫn
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Khởi tạo Flutter Binding
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // Khởi tạo Firebase tùy theo môi trường
+  // Firebase khởi tạo
   if (kIsWeb) {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -24,14 +25,14 @@ void main() async {
         storageBucket: "potter-gemini.firebasestorage.app",
         messagingSenderId: "459897220631",
         appId: "1:459897220631:web:2c682ec4db8ccdb3c0b652",
-        measurementId: "G-EGJNP85Q6L"
+        measurementId: "G-EGJNP85Q6L",
       ),
     );
   } else {
-    await Firebase.initializeApp(); // Android/iOS sử dụng file cấu hình
+    await Firebase.initializeApp();
   }
 
-  // Load tệp môi trường
+  // Load .env
   await dotenv.load(fileName: ".env");
 
   runApp(
@@ -42,12 +43,12 @@ void main() async {
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
-  Future<bool> _isFirstTime() async {
+  Future<bool> _checkFirstTime() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('isFirstTime') ?? true;
   }
 
-  void _setFirstTimeFalse() async {
+  Future<void> _markFirstTimeDone() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isFirstTime', false);
   }
@@ -57,53 +58,55 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Potter GPT',
       theme: lightMode,
       darkTheme: darkMode,
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const MyHomePage(),
-      },
+  '/login': (context) => const LoginScreen(),
+  '/home': (context) => const MyHomePage(),
+  '/settings': (context) => const SettingsPage(), // Sử dụng SettingsPage từ file settings_page.dart
+},
+
       home: FutureBuilder<bool>(
-        future: _isFirstTime(),
+        future: _checkFirstTime(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasData && snapshot.data == true) {
-            return Onboarding(onDone: () {
-              _setFirstTimeFalse();
-              _navigateBasedOnAuthState(context);
+            return Onboarding(onDone: () async {
+              await _markFirstTimeDone();
+              _navigateBasedOnAuth(context);
             });
           } else {
-            return StreamBuilder<User?>(
-              stream: FirebaseAuth.instance.authStateChanges(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(
-                    body: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                } else if (snapshot.hasData) {
-                  return const MyHomePage();
-                } else {
-                  return const LoginScreen();
-                }
-              },
-            );
+            return _handleAuthState();
           }
         },
       ),
     );
   }
 
-  void _navigateBasedOnAuthState(BuildContext context) {
+  Widget _handleAuthState() {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        } else if (snapshot.hasData) {
+          return const MyHomePage();
+        } else {
+          return const LoginScreen();
+        }
+      },
+    );
+  }
+
+  void _navigateBasedOnAuth(BuildContext context) {
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (user != null) {
         Navigator.pushReplacementNamed(context, '/home');

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:gemini_gpt/message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gemini_gpt/themeNotifier.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Thêm FirebaseAuth
+import 'package:gemini_gpt/settings_page.dart';
+
 class MyHomePage extends ConsumerStatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
@@ -17,22 +17,12 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
   final List<Message> _messages = [];
   bool _isLoading = false;
 
-  // Hàm đăng xuất
-  Future<void> _logout() async {
-    try {
-      await FirebaseAuth.instance.signOut(); // Đăng xuất khỏi Firebase
-      Navigator.pushReplacementNamed(context, '/login'); // Chuyển về màn hình login
-    } catch (e) {
-      print('Error during logout: $e');
-    }
-  } 
-
   callGeminiModel() async {
     try {
       if (_controller.text.isNotEmpty) {
         _messages.add(Message(text: _controller.text, isUser: true));
         setState(() {
-          _isLoading = true; // Cập nhật giá trị _isLoading qua setState
+          _isLoading = true;
         });
       }
 
@@ -43,7 +33,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
 
       setState(() {
         _messages.add(Message(text: response.text!, isUser: false));
-        _isLoading = false; // Cập nhật giá trị _isLoading qua setState
+        _isLoading = false;
       });
 
       _controller.clear();
@@ -54,8 +44,6 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentTheme = ref.watch(themeProvider);
-
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
@@ -63,31 +51,21 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 1,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Image.asset('assets/gpt-robot.png'),
-                const SizedBox(width: 3),
-                Text('Potter - GPT', style: Theme.of(context).textTheme.titleLarge)
-              ],
-            ),
-            GestureDetector(
-              child: (currentTheme == ThemeMode.dark)
-                  ? Icon(Icons.light_mode, color: Theme.of(context).colorScheme.secondary)
-                  : Icon(Icons.dark_mode, color: Theme.of(context).colorScheme.primary),
-              onTap: () {
-                ref.read(themeProvider.notifier).toggleTheme();
-              },
-            ),
-            // Thêm nút Log Out vào AppBar
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: _logout, // Gọi hàm đăng xuất khi nhấn nút
-              tooltip: 'Log Out',
-            ),
+            Image.asset('assets/gpt-robot.png', height: 30),
+            const SizedBox(width: 10),
+            Text('Potter - GPT', style: Theme.of(context).textTheme.titleLarge),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, '/settings'); // Điều hướng tới trang Settings
+            },
+            tooltip: 'Settings',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -100,26 +78,18 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                   title: Align(
                     alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: message.isUser
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(context).colorScheme.secondary,
-                        borderRadius: message.isUser
-                            ? const BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                bottomRight: Radius.circular(20),
-                                bottomLeft: Radius.circular(20))
-                            : const BorderRadius.only(
-                                topRight: Radius.circular(20),
-                                topLeft: Radius.circular(20),
-                                bottomRight: Radius.circular(20)),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         message.text,
-                        style: message.isUser
-                            ? Theme.of(context).textTheme.bodyMedium
-                            : Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: message.isUser ? Colors.white : Colors.black,
+                            ),
                       ),
                     ),
                   ),
@@ -128,10 +98,10 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 32, top: 16.0, left: 16.0, right: 16),
+            padding: const EdgeInsets.all(16.0),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color.fromARGB(255, 15, 13, 13),
                 borderRadius: BorderRadius.circular(32),
                 boxShadow: [
                   BoxShadow(
@@ -139,7 +109,7 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                     spreadRadius: 5,
                     blurRadius: 7,
                     offset: const Offset(0, 3),
-                  )
+                  ),
                 ],
               ),
               child: Row(
@@ -147,31 +117,29 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: Theme.of(context).textTheme.bodyMedium,
                       decoration: InputDecoration(
-                        hintText: 'Write your message',
-                        hintStyle: Theme.of(context).textTheme.titleSmall!.copyWith(color: Colors.grey),
+                        hintText: 'Write your message...',
+                        hintStyle: TextStyle(color: Colors.grey.shade500),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
+                      // Gọi hàm callGeminiModel khi nhấn Enter
+                      onSubmitted: (_) => callGeminiModel(),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   _isLoading
                       ? const Padding(
-                          padding: EdgeInsets.all(8),
+                          padding: EdgeInsets.all(12.0),
                           child: SizedBox(
-                            width: 20,
-                            height: 20,
+                            width: 24,
+                            height: 24,
                             child: CircularProgressIndicator(),
                           ),
                         )
-                      : Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: GestureDetector(
-                            onTap: callGeminiModel,
-                            child: Image.asset('assets/send.png'),
-                          ),
+                      : IconButton(
+                          icon: Image.asset('assets/send.png', height: 24),
+                          onPressed: callGeminiModel,
                         ),
                 ],
               ),
