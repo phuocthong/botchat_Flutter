@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
     clientId:
         '459897220631-krad8024ec062d8jqcl45hpmp37oknok.apps.googleusercontent.com', // Thay bằng clientId từ Google Console
   );
-
+  
   @override
   void initState() {
     super.initState();
@@ -40,130 +40,149 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void loginUser(BuildContext context) async {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email và mật khẩu không được để trống.')),
-      );
-      return;
-    }
+  if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Email và mật khẩu không được để trống.')),
+    );
+    return;
+  }
 
+  setState(() {
+    isLoading = true;
+  });
+
+  try {
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
+    // Lấy uid của người dùng
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      String uid = user.uid;
+      print("User logged in with UID: $uid");
+      // Thực hiện các thao tác khác với UID nếu cần
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Đăng nhập thành công!')),
+    );
+    Navigator.pushReplacementNamed(context, '/home');
+  } on FirebaseAuthException catch (e) {
+    if (e.code == 'user-not-found') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không tìm thấy tài khoản với email này.')),
+      );
+    } else if (e.code == 'wrong-password') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mật khẩu không chính xác.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: ${e.message}')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Lỗi: ${e.toString()}')),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
+
+  void loginWithFacebook(BuildContext context) async {
+  try {
     setState(() {
       isLoading = true;
     });
 
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng nhập thành công!')),
-      );
+    final LoginResult result = await FacebookAuth.instance.login(
+      permissions: ['email', 'public_profile'],
+    );
 
+    if (result.status == LoginStatus.success) {
+      final accessToken = result.accessToken!.token;
+      final OAuthCredential facebookAuthCredential =
+          FacebookAuthProvider.credential(accessToken!);
+
+      await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+      final User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        String uid = user.uid;
+        print("Facebook user logged in with UID: $uid");
+        // Thực hiện các thao tác khác với UID nếu cần
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng nhập Facebook thành công!')),
+      );
       Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không tìm thấy tài khoản với email này.')),
-        );
-      } else if (e.code == 'wrong-password') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mật khẩu không chính xác.')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: ${e.message}')),
-        );
-      }
-    } catch (e) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString()}')),
+        SnackBar(content: Text('Đăng nhập thất bại: ${result.message}')),
       );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Lỗi: ${e.toString()}')),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
   }
+}
 
-  void loginWithFacebook(BuildContext context) async {
-    try {
-      setState(() {
-        isLoading = true;
-      });
-
-      final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
-      );
-
-      if (result.status == LoginStatus.success) {
-        final accessToken = result.accessToken!.token;
-
-        final OAuthCredential facebookAuthCredential =
-            FacebookAuthProvider.credential(accessToken!);
-
-        await FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng nhập Facebook thành công!')),
-        );
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đăng nhập thất bại: ${result.message}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString()}')),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
 
   void loginWithGoogle(BuildContext context) async {
-    try {
-      setState(() {
-        isLoading = true;
-      });
+  try {
+    setState(() {
+      isLoading = true;
+    });
 
-      await googleSignIn.signOut(); // Ngắt kết nối tài khoản cũ
+    await googleSignIn.signOut(); // Ngắt kết nối tài khoản cũ
 
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Người dùng đã hủy đăng nhập.')),
-        );
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final OAuthCredential googleAuthCredential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      await FirebaseAuth.instance.signInWithCredential(googleAuthCredential);
-
+    final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng nhập Google thành công!')),
+        const SnackBar(content: Text('Người dùng đã hủy đăng nhập.')),
       );
-      Navigator.pushReplacementNamed(context, '/home');
-    } catch (e) {
-      debugPrint('Lỗi Google Sign-In: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi đăng nhập Google: ${e.toString()}')),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
+      return;
     }
+
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final OAuthCredential googleAuthCredential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    await FirebaseAuth.instance.signInWithCredential(googleAuthCredential);
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      String uid = user.uid;
+      print("Google user logged in with UID: $uid");
+      // Thực hiện các thao tác khác với UID nếu cần
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Đăng nhập Google thành công!')),
+    );
+    Navigator.pushReplacementNamed(context, '/home');
+  } catch (e) {
+    debugPrint('Lỗi Google Sign-In: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Lỗi khi đăng nhập Google: ${e.toString()}')),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

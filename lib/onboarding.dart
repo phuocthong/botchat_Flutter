@@ -19,7 +19,7 @@ class Onboarding extends StatelessWidget {
                 const Column(
                   children: [
                     Text(
-                      'Your AI Assistant',
+                      'Your AI Assista  nt',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,

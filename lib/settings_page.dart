@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gemini_gpt/chat_history_page.dart';
 import 'package:gemini_gpt/themeNotifier.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -41,7 +42,7 @@ class SettingsPage extends ConsumerWidget {
       // Cần xác thực mật khẩu hiện tại trước khi thay đổi mật khẩu
       await user?.reauthenticateWithCredential(
         EmailAuthProvider.credential(
-          email: user?.email ?? '',
+          email: user.email ?? '',
           password: currentPassword,
         ),
       );
@@ -87,15 +88,21 @@ class SettingsPage extends ConsumerWidget {
           children: [
             // Thông tin tài khoản
             Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              child: ListTile(
-                leading: const Icon(Icons.account_circle, size: 50, color: Colors.blue),
-                title: Text(user?.email ?? 'No email available',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Account Info'),
-              ),
-            ),
+  elevation: 4,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  child: ListTile(
+    leading: const Icon(Icons.history, color: Colors.blue),
+    title: const Text('Chat History'),
+    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.blue),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ChatHistoryPage()),
+      );
+    },
+  ),
+),
+
             const SizedBox(height: 16),
 
             // Chuyển đổi nền sáng/tối
@@ -160,8 +167,8 @@ class SettingsPage extends ConsumerWidget {
 
   // Hộp thoại để nhập mật khẩu hiện tại và mật khẩu mới
   void _showChangePasswordDialog(BuildContext context) {
-    final TextEditingController _currentPasswordController = TextEditingController();
-    final TextEditingController _newPasswordController = TextEditingController();
+    final TextEditingController currentPasswordController = TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
 
     showDialog(
       context: context,
@@ -172,7 +179,7 @@ class SettingsPage extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                controller: _currentPasswordController,
+                controller: currentPasswordController,
                 decoration: const InputDecoration(
                   labelText: 'Current Password',
                   border: OutlineInputBorder(),
@@ -181,7 +188,7 @@ class SettingsPage extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: _newPasswordController,
+                controller: newPasswordController,
                 decoration: const InputDecoration(
                   labelText: 'New Password',
                   border: OutlineInputBorder(),
@@ -199,8 +206,8 @@ class SettingsPage extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                final currentPassword = _currentPasswordController.text.trim();
-                final newPassword = _newPasswordController.text.trim();
+                final currentPassword = currentPasswordController.text.trim();
+                final newPassword = newPasswordController.text.trim();
                 _changePassword(context, currentPassword, newPassword);
               },
               child: const Text('Change'),

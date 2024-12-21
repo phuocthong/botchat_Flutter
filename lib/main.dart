@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gemini_gpt/chat_history_page.dart';
 import 'package:gemini_gpt/myHomePage.dart';
 import 'package:gemini_gpt/themeNotifier.dart';
 import 'package:gemini_gpt/themes.dart';
@@ -65,9 +66,11 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       routes: {
   '/login': (context) => const LoginScreen(),
-  '/home': (context) => const MyHomePage(),
-  '/settings': (context) => const SettingsPage(), // Sử dụng SettingsPage từ file settings_page.dart
+  '/home': (context) => MyHomePage(),
+  '/settings': (context) => const SettingsPage(),
+  '/chatHistory': (context) => const ChatHistoryPage(), // Thêm route cho lịch sử trò chuyện
 },
+
 
       home: FutureBuilder<bool>(
         future: _checkFirstTime(),
@@ -98,7 +101,7 @@ class MyApp extends ConsumerWidget {
             ),
           );
         } else if (snapshot.hasData) {
-          return const MyHomePage();
+          return MyHomePage();
         } else {
           return const LoginScreen();
         }
